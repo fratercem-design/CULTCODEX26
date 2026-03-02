@@ -5,7 +5,12 @@ import { createSession } from '@/lib/auth/session';
 import { checkRateLimit, getClientIdentifier, AUTH_RATE_LIMIT } from '@/lib/auth/rate-limit';
 import { loginSchema, validateRequestBody, formatValidationErrors } from '@/lib/validation';
 
+// Force Node.js runtime - Prisma requires Node.js
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
+  console.log('[LOGIN] Request received');
+  
   try {
     // Check rate limit
     const identifier = getClientIdentifier(request);
@@ -31,8 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = validation.data;
+    console.log('[LOGIN] Validated input for email:', email);
 
     // Find user by email with entitlements
+    console.log('[LOGIN] Querying database for user');
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
@@ -48,6 +55,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    console.log('[LOGIN] Database query completed, user found:', !!user);
 
     if (!user) {
       return NextResponse.json(
