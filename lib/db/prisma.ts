@@ -7,19 +7,30 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
-// Use DATABASE_URL directly from process.env to avoid validation issues at build time
-const pool = globalForPrisma.pool ?? new Pool({
-  connectionString: process.env.DATABASE_URL,
+// Lazy initialization - create pool and client on first access
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    // Create pool with DATABASE_URL from environment
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    
+    const adapter = new PrismaPg(pool);
+    
+    globalForPrisma.prisma = new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+    
+    globalForPrisma.pool = pool;
+  }
+  
+  return globalForPrisma.prisma;
+}
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient();
+    return (client as any)[prop];
+  },
 });
-if (process.env.NODE_ENV !== 'production') globalForPrisma.pool = pool;
-
-const adapter = new PrismaPg(pool);
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
