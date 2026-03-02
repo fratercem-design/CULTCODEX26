@@ -4,18 +4,31 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Initialize Prisma client - pass DATABASE_URL directly to constructor for Prisma 7
-function createPrismaClient() {
-  const databaseUrl = process.env.DATABASE_URL || '';
+// Lazy initialization - create client on first access
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    const databaseUrl = process.env.DATABASE_URL || '';
+    
+    globalForPrisma.prisma = new PrismaClient({
+      datasourceUrl: databaseUrl,
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
   
-  return new PrismaClient({
-    datasourceUrl: databaseUrl,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
+  return globalForPrisma.prisma;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// Export a proxy that lazily initializes the client
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient();
+    const value = (client as any)[prop];
+    
+    // Bind methods to the client instance
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    
+    return value;
+  },
+});
