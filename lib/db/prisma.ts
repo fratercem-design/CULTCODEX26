@@ -5,17 +5,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Lazy initialization - create client on first access
+// Prisma 7 reads DATABASE_URL from prisma.config.ts automatically
 function getPrismaClient() {
   if (!globalForPrisma.prisma) {
-    const databaseUrl = process.env.DATABASE_URL || '';
-    
     console.log('[Prisma Init] Creating Prisma client...');
     console.log('[Prisma Init] DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.log('[Prisma Init] DATABASE_URL length:', databaseUrl.length);
-    console.log('[Prisma Init] DATABASE_URL prefix:', databaseUrl.substring(0, 30));
+    console.log('[Prisma Init] DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
     
     globalForPrisma.prisma = new PrismaClient({
-      datasourceUrl: databaseUrl,
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
     
