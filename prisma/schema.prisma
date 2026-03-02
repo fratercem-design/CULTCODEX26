@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EntitlementType {
+  vault_access
+  grimoire_access
+  admin
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  entitlements      Entitlement[]
+  contentItems      ContentItem[]
+  grimoireRevisions GrimoireRevision[]
+  journalEntries    JournalEntry[]
+  ritualInstances   RitualInstance[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+}
+
+model Entitlement {
+  id              String          @id @default(cuid())
+  userId          String
+  entitlementType EntitlementType
+  grantedAt       DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entitlementType])
+  @@index([userId])
+}
+
+model StripeEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  eventType String
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+  @@index([processed])
+}
+
+model ContentItem {
+  id                   String   @id @default(cuid())
+  title                String
+  slug                 String   @unique
+  content              String   @db.Text
+  requiredEntitlement  EntitlementType?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  authorId             String
+
+  author User            @relation(fields: [authorId], references: [id])
+  assets ContentAsset[]
+  tags   ContentItemTag[]
+
+  @@index([slug])
+  @@index([authorId])
+}
+
+model ContentAsset {
+  id            String   @id @default(cuid())
+  contentItemId String
+  filename      String
+  mimeType      String
+  storageKey    String
+  createdAt     DateTime @default(now())
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId])
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  contentItems    ContentItemTag[]
+  grimoireEntries GrimoireEntryTag[]
+}
+
+model ContentItemTag {
+  contentItemId String
+  tagId         String
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contentItemId, tagId])
+  @@index([contentItemId])
+  @@index([tagId])
+}
+
+model GrimoireEntry {
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  currentRevisionId String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  revisions GrimoireRevision[]
+  tags      GrimoireEntryTag[]
+
+  @@index([slug])
+}
+
+model GrimoireRevision {
+  id               String   @id @default(cuid())
+  grimoireEntryId  String
+  content          String   @db.Text
+  revisionNumber   Int
+  authorId         String
+  createdAt        DateTime @default(now())
+
+  grimoireEntry        GrimoireEntry  @relation(fields: [grimoireEntryId], references: [id], onDelete: Cascade)
+  author               User           @relation(fields: [authorId], references: [id])
+
+  @@unique([grimoireEntryId, revisionNumber])
+  @@index([grimoireEntryId])
+  @@index([authorId])
+}
+
+model GrimoireEntryTag {
+  grimoireEntryId String
+  tagId           String
+
+  grimoireEntry GrimoireEntry @relation(fields: [grimoireEntryId], references: [id], onDelete: Cascade)
+  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([grimoireEntryId, tagId])
+  @@index([grimoireEntryId])
+  @@index([tagId])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RitualInstance {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?  @db.Text
+  scheduledAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  actionType   String
+  resourceType String
+  resourceId   String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+}
