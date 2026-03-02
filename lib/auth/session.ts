@@ -1,11 +1,11 @@
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
 
 const SESSION_COOKIE_NAME = 'session';
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-interface SessionPayload {
+interface SessionPayload extends JWTPayload {
   userId: string;
   email: string;
 }
@@ -25,7 +25,7 @@ function getSecretKey(): Uint8Array {
  * @returns JWT token string
  */
 export async function createSession(userId: string, email: string): Promise<string> {
-  const token = await new SignJWT({ userId, email } as SessionPayload)
+  const token = await new SignJWT({ userId, email })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(new Date(Date.now() + SESSION_DURATION))
