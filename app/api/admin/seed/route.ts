@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Starting database seed...');
+    console.log('DATABASE_URL available:', !!process.env.DATABASE_URL);
+    console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
 
     // Create admin user
     const adminEmail = 'admin@cultofpsyche.com';
