@@ -1,16 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import { env } from '@/lib/env';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   pool: Pool | undefined;
 };
 
-// Use DATABASE_URL from environment variables
+// Use DATABASE_URL directly from process.env to avoid validation issues at build time
 const pool = globalForPrisma.pool ?? new Pool({
-  connectionString: env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 if (process.env.NODE_ENV !== 'production') globalForPrisma.pool = pool;
 
