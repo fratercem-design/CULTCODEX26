@@ -4,6 +4,65 @@ import { prisma } from '@/lib/db/prisma';
 import { createContentItemSchema, validateRequestBody, formatValidationErrors } from '@/lib/validation';
 
 /**
+ * GET /api/admin/vault
+ * Get all ContentItems (admin view with full details)
+ * Requires admin authentication
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Verify authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    // Verify admin entitlement
+    const adminCheck = await requireAdmin(authResult.userId);
+    if (adminCheck instanceof NextResponse) {
+      return adminCheck;
+    }
+
+    // Fetch all content items with tags
+    const contentItems = await prisma.contentItem.findMany({
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Format response
+    const formattedItems = contentItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      content: item.content,
+      requiredEntitlement: item.requiredEntitlement,
+      authorId: item.authorId,
+      tags: item.tags.map((ct) => ({
+        id: ct.tag.id,
+        name: ct.tag.name,
+      })),
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }));
+
+    return NextResponse.json({ items: formattedItems });
+  } catch (error) {
+    console.error('Error fetching content items:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', message: 'Failed to fetch content items' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/admin/vault
  * Create a new ContentItem
  * Requires admin authentication
