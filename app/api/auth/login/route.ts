@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validation.data;
 
-    // Find user by email
+    // Find user by email with entitlements
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
@@ -41,6 +41,11 @@ export async function POST(request: NextRequest) {
         passwordHash: true,
         createdAt: true,
         updatedAt: true,
+        entitlements: {
+          select: {
+            entitlementType: true,
+          },
+        },
       },
     });
 
@@ -68,9 +73,15 @@ export async function POST(request: NextRequest) {
 
     // Return user data (excluding password hash)
     const { passwordHash, ...userData } = user;
+    
+    // Format entitlements as array of strings
+    const formattedUser = {
+      ...userData,
+      entitlements: user.entitlements.map(e => e.entitlementType),
+    };
 
     return NextResponse.json(
-      { message: 'Login successful', user: userData },
+      { message: 'Login successful', user: formattedUser },
       { status: 200 }
     );
   } catch (error) {
