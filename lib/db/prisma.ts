@@ -16,9 +16,8 @@ function createPrismaClient(): PrismaClient {
     max: 1, // Serverless: use minimal connections
   });
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.pool = pool;
-  }
+  // Always cache pool to reuse connections across serverless invocations
+  globalForPrisma.pool = pool;
 
   // Create Prisma adapter
   const adapter = new PrismaPg(pool);
@@ -33,6 +32,5 @@ function createPrismaClient(): PrismaClient {
 // Export singleton
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// Always cache Prisma client to reuse across serverless invocations
+globalForPrisma.prisma = prisma;
