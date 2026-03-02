@@ -21,6 +21,21 @@ export async function POST(request: NextRequest) {
     console.log('Starting database seed...');
     console.log('DATABASE_URL available:', !!process.env.DATABASE_URL);
     console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
+    console.log('DATABASE_URL starts with:', process.env.DATABASE_URL?.substring(0, 20));
+    console.log('DATABASE_URL contains neon:', process.env.DATABASE_URL?.includes('neon'));
+
+    // Test database connection first
+    console.log('Testing database connection...');
+    try {
+      await prisma.$connect();
+      console.log('Database connection successful');
+    } catch (connError: any) {
+      console.error('Database connection failed:', connError.message);
+      return NextResponse.json(
+        { error: 'Database connection failed', details: connError.message },
+        { status: 500 }
+      );
+    }
 
     // Create admin user
     const adminEmail = 'admin@cultofpsyche.com';
