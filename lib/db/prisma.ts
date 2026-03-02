@@ -6,8 +6,10 @@ const globalForPrisma = globalThis as unknown as {
 
 // Initialize Prisma client - pass DATABASE_URL directly to constructor for Prisma 7
 function createPrismaClient() {
+  const databaseUrl = process.env.DATABASE_URL || '';
+  
   return new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
+    datasourceUrl: databaseUrl,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
