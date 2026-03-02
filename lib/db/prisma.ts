@@ -9,10 +9,17 @@ function getPrismaClient() {
   if (!globalForPrisma.prisma) {
     const databaseUrl = process.env.DATABASE_URL || '';
     
+    console.log('[Prisma Init] Creating Prisma client...');
+    console.log('[Prisma Init] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('[Prisma Init] DATABASE_URL length:', databaseUrl.length);
+    console.log('[Prisma Init] DATABASE_URL prefix:', databaseUrl.substring(0, 30));
+    
     globalForPrisma.prisma = new PrismaClient({
       datasourceUrl: databaseUrl,
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
+    
+    console.log('[Prisma Init] Prisma client created');
   }
   
   return globalForPrisma.prisma;
