@@ -5,10 +5,6 @@ import { createSession } from '@/lib/auth/session';
 import { checkRateLimit, getClientIdentifier, AUTH_RATE_LIMIT } from '@/lib/auth/rate-limit';
 import { loginSchema, validateRequestBody, formatValidationErrors } from '@/lib/validation';
 
-// Force Node.js runtime (not Edge) - Prisma requires Node.js
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   try {
     // Check rate limit
