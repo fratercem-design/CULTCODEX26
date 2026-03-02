@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { verifyPassword } from '@/lib/auth/password';
-import { createSession, setSessionCookie } from '@/lib/auth/session';
+import { createSession } from '@/lib/auth/session';
 import { checkRateLimit, getClientIdentifier, AUTH_RATE_LIMIT } from '@/lib/auth/rate-limit';
 import { loginSchema, validateRequestBody, formatValidationErrors } from '@/lib/validation';
 
 // Force Node.js runtime (not Edge) - Prisma requires Node.js
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,22 +72,31 @@ export async function POST(request: NextRequest) {
     // Create JWT session
     const token = await createSession(user.id, user.email);
     
-    // Set httpOnly cookie
-    await setSessionCookie(token);
-
-    // Return user data (excluding password hash)
-    const { passwordHash, ...userData } = user;
-    
     // Format entitlements as array of strings
     const formattedUser = {
-      ...userData,
+      id: user.id,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       entitlements: user.entitlements.map(e => e.entitlementType),
     };
 
-    return NextResponse.json(
+    // Create response with cookie
+    const response = NextResponse.json(
       { message: 'Login successful', user: formattedUser },
       { status: 200 }
     );
+
+    // Set httpOnly cookie directly on response
+    response.cookies.set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     // Log detailed error for debugging
