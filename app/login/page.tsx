@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  console.log('LoginPage component rendered');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,17 +14,24 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted - handleSubmit called');
+    console.log('Email:', email);
+    console.log('Password length:', password.length);
+    
     setError('');
     setLoading(true);
 
     try {
+      console.log('Sending fetch request to /api/auth/login');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
         setError(data.error || 'Login failed');
@@ -33,11 +41,14 @@ export default function LoginPage() {
 
       // Redirect to admin if admin, otherwise to vault
       if (data.user.entitlements.includes('admin')) {
+        console.log('Redirecting to /admin');
         router.push('/admin');
       } else {
+        console.log('Redirecting to /vault');
         router.push('/vault');
       }
     } catch (err) {
+      console.error('Login error caught:', err);
       setError('An error occurred. Please try again.');
       setLoading(false);
     }
