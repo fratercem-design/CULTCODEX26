@@ -1,6 +1,10 @@
-# Cult of Psyche Vault + Grimoire
+# 🔮 Cult of Psyche - Vault + Grimoire Platform
 
-A membership platform MVP built with Next.js 14, TypeScript, PostgreSQL, and Stripe integration. Features content gating, knowledge management, personal journaling, and ritual tracking.
+A membership platform featuring a gated Vault, versioned Grimoire, private Journal, and Ritual tracking. Includes an Admin Console with CRUD tools and role-based access control.
+
+**Live Platform:** https://cultcodex-2666.vercel.app
+
+> ⚠️ **Important:** This repository uses **JWT authentication** and **Prisma ORM**. If you're looking for a codebase using NextAuth or Drizzle ORM, that's a different repository (PSYCHEP2).
 
 ## 🚀 Features
 
@@ -24,14 +28,32 @@ A membership platform MVP built with Next.js 14, TypeScript, PostgreSQL, and Str
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with jose library
+- **Authentication**: JWT with jose library (NOT NextAuth)
 - **Payments**: Stripe Checkout & Webhooks
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS + Custom Occult Neon Theme
 - **Validation**: Zod schemas
-- **Security**: DOMPurify for XSS prevention
+- **Security**: Input validation and XSS prevention
+
+### PSYCHEP2 vs kiroproj (This Repo)
+
+⚠️ **If you're looking at documentation mentioning NextAuth or Drizzle ORM, that's a different codebase.**
+
+| Feature | PSYCHEP2 (Other Repo) | kiroproj (This Repo) |
+|---------|----------------------|---------------------|
+| Auth | NextAuth | JWT (custom) |
+| ORM | Drizzle | Prisma |
+| Migrations | Drizzle migrations | Prisma migrate |
+| Session | NextAuth session | JWT cookies |
+| Data Layer | Drizzle queries | Prisma Client |
+
+**Do NOT mix these stacks.** If merging features from PSYCHEP2:
+1. Copy UI components only
+2. Rewrite data calls using Prisma
+3. Rewrite auth checks using JWT middleware
+4. Test thoroughly after each feature
 
 ## 📋 Prerequisites
 
@@ -268,6 +290,17 @@ netlify deploy --prod
 - **Audit Logging**: All admin actions tracked
 
 ## 📚 API Documentation
+
+### Complete Documentation
+
+- **`PLATFORM_AUDIT_REPORT.md`** - Complete platform audit and feature status
+- **`USER_GUIDE.md`** - Comprehensive user and admin guide
+- **`DELIVERY_SUMMARY.md`** - Feature completeness matrix
+- **`THEME_SHOWCASE.md`** - Occult neon theme documentation
+- **`DEPLOYMENT.md`** - General deployment guide
+- **`VERCEL_DEPLOYMENT_GUIDE.md`** - Vercel-specific instructions
+- **`PRISMA_7_FIX.md`** - Prisma 7 serverless configuration
+- **`WEBHOOK_SETUP.md`** - Stripe webhook setup
 
 ### Authentication
 - `POST /api/auth/signup` - Create new user account
