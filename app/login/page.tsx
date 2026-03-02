@@ -22,8 +22,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('Sending fetch request to /api/auth/login');
-      const response = await fetch('/api/auth/login', {
+      console.log('Sending fetch request to /api/user-login');
+      const response = await fetch('/api/user-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
