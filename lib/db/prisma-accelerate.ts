@@ -6,9 +6,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Create Prisma client for Accelerate
+// Accelerate handles connection pooling automatically
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
-    accelerateUrl: process.env.DATABASE_URL,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
