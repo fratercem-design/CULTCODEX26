@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { EntitlementType } from '@prisma/client';
+
+type EntitlementType = 'admin' | 'vault_access' | 'grimoire_access';
 
 interface ContentItem {
   id: string;
