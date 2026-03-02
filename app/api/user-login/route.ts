@@ -3,9 +3,15 @@ import { prisma } from '@/lib/db/prisma';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
 import { checkRateLimit, getClientIdentifier, AUTH_RATE_LIMIT } from '@/lib/auth/rate-limit';
-import { loginSchema, validateRequestBody, formatValidationErrors } from '@/lib/validation';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
+
+// Simple login schema without DOMPurify
+const simpleLoginSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(1),
+});
 
 export async function POST(request: NextRequest) {
   console.log('[USER-LOGIN] Request received');
@@ -26,10 +32,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate input
-    const validation = await validateRequestBody(request, loginSchema);
+    const body = await request.json();
+    const validation = simpleLoginSchema.safeParse(body);
+    
     if (!validation.success) {
       return NextResponse.json(
-        formatValidationErrors(validation.error),
+        { 
+          message: 'Validation failed',
+          errors: validation.error.issues.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+          })),
+        },
         { status: 400 }
       );
     }
