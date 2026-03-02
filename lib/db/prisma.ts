@@ -2,17 +2,49 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-// Get DATABASE_URL - required for Prisma 7
-const connectionString = process.env.DATABASE_URL || '';
+// Global singleton
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+  pool: Pool | undefined;
+};
 
-// Create connection pool
-const pool = new Pool({ connectionString });
+// Lazy initialization function
+function getPrismaClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    const connectionString = process.env.DATABASE_URL;
+    
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    
+    // Create connection pool
+    const pool = new Pool({ connectionString });
+    globalForPrisma.pool = pool;
+    
+    // Create Prisma adapter
+    const adapter = new PrismaPg(pool);
+    
+    // Create Prisma client with adapter
+    globalForPrisma.prisma = new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+  
+  return globalForPrisma.prisma;
+}
 
-// Create Prisma adapter
-const adapter = new PrismaPg(pool);
-
-// Create Prisma client with adapter (required for Prisma 7)
-export const prisma = new PrismaClient({
-  adapter,
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+// Export a proxy that lazily initializes the client
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient();
+    const value = (client as any)[prop];
+    
+    // Bind methods to the client instance
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    
+    return value;
+  },
 });
