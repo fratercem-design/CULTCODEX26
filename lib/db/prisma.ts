@@ -1,38 +1,30 @@
 import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+// Simple singleton pattern with datasourceUrl
+let prisma: PrismaClient;
 
-// Lazy initialization - create client on first access
-// Prisma 7 reads DATABASE_URL from prisma.config.ts automatically
-function getPrismaClient() {
-  if (!globalForPrisma.prisma) {
-    console.log('[Prisma Init] Creating Prisma client...');
-    console.log('[Prisma Init] DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.log('[Prisma Init] DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
-    
-    globalForPrisma.prisma = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+if (process.env.NODE_ENV === 'production') {
+  // In production (Vercel), create a new client with explicit datasourceUrl
+  prisma = new PrismaClient({
+    // @ts-ignore - Prisma 7 datasourceUrl option
+    datasourceUrl: process.env.DATABASE_URL,
+    log: ['error'],
+  });
+} else {
+  // In development, use global to avoid creating multiple clients
+  const globalWithPrisma = global as typeof globalThis & {
+    prisma: PrismaClient;
+  };
+  
+  if (!globalWithPrisma.prisma) {
+    globalWithPrisma.prisma = new PrismaClient({
+      // @ts-ignore - Prisma 7 datasourceUrl option
+      datasourceUrl: process.env.DATABASE_URL,
+      log: ['query', 'error', 'warn'],
     });
-    
-    console.log('[Prisma Init] Prisma client created');
   }
   
-  return globalForPrisma.prisma;
+  prisma = globalWithPrisma.prisma;
 }
 
-// Export a proxy that lazily initializes the client
-export const prisma = new Proxy({} as PrismaClient, {
-  get(target, prop) {
-    const client = getPrismaClient();
-    const value = (client as any)[prop];
-    
-    // Bind methods to the client instance
-    if (typeof value === 'function') {
-      return value.bind(client);
-    }
-    
-    return value;
-  },
-});
+export { prisma };
