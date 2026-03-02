@@ -4,9 +4,10 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Initialize Prisma client - Prisma will use DATABASE_URL from env automatically
+// Initialize Prisma client - pass DATABASE_URL directly to constructor for Prisma 7
 function createPrismaClient() {
   return new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
